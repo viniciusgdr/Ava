@@ -1,0 +1,24 @@
+{
+  "name": "@viniciusgdr/ava",
+  "version": "1.0.0",
+  "description": "A API For AVA Sae Books",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/viniciusgdr/Ava.git"
+  },
+  "keywords": [
+    "ava",
+    "sae",
+    "books"
+  ],
+  "author": "viniciusgdr",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/viniciusgdr/Ava/issues"
+  },
+  "homepage": "https://github.com/viniciusgdr/Ava#readme"
+}
