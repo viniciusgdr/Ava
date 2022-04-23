@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/viniciusgdr/Ava/issues"
   },
-  "homepage": "https://github.com/viniciusgdr/Ava#readme"
+  "homepage": "https://github.com/viniciusgdr/Ava#readme",
+  "dependencies": {
+    "puppeteer": "^13.6.0"
+  }
 }
