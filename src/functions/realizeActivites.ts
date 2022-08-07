@@ -1,12 +1,13 @@
 import axios from 'axios';
 import puppeteer from 'puppeteer';
 import { readAvaVideo } from './readAvaVideo';
+import { ActivitesAPIResult, IQuestions } from './../interfaces';
 
 interface IRealizeAllActivites {
     token2: string,
     needListUrl: string[]
 }
-async function sendPostAnswer(answer: string, cardTypeId: string, learningPathId: string, learningPathItemId: string, random: string, schedule_id: string, token: string) {
+async function sendPostAnswer(answer: string, cardTypeId: string, learningPathId: string, learningPathItemId: string, random: string[] | number[], schedule_id: string | number, token: string) {
     return await axios.post('https://apis.sae.digital/ava/answer/question', {
         answer: Number(answer),
         card_type_id: Number(cardTypeId),
@@ -32,7 +33,7 @@ export async function realizeAllActivites(browser: puppeteer.Browser, token: str
     token2,
     needListUrl
 }: IRealizeAllActivites) {
-    let arrayUrlActivites = []
+    let arrayUrlActivites = [] as string[]
     if (needListUrl.length > 0) {
         arrayUrlActivites = needListUrl
     } else {
@@ -42,13 +43,15 @@ export async function realizeAllActivites(browser: puppeteer.Browser, token: str
         let trilhaWeb = arrayUrlActivites[i].split('/')
         let url = `https://apis.sae.digital/ava/escola-digital/jarvis/trilha?grade=${trilhaWeb[5]}&subject=${trilhaWeb[6]}&book=${trilhaWeb[7]}&learning_path_slug=${trilhaWeb[11]}&card_type=${trilhaWeb[8]}&learning_path_id=${trilhaWeb[10]}`
 
-        let data = await getData(url, token2)
+        let data: {
+            data: ActivitesAPIResult
+        } = await getData(url, token2)
         let dataMe = await getData(url, token)
-        let questions = data.data.questions
+        let questions = data.data.questions as IQuestions[]
         let schedule_id = data?.data?.learning_path?.schedules[0]?.id
         if (schedule_id == undefined) throw new Error('Não foi possível encontrar o schedule_id')
-        questions?.forEach(async (value, index) => {
-            let learningPathItemId = value.learning_path_item_id
+        questions.forEach(async (value, index) => {
+            let learningPathItemId = String(value.learning_path_item_id)
             let originalIndex = value.choices.map((value) => value.originalIndex)
             console.log('2', trilhaWeb[8], trilhaWeb[10], learningPathItemId, originalIndex, schedule_id, token)
             let random = Math.floor(Math.random() * 2) + 2
