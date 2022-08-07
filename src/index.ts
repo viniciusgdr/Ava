@@ -15,6 +15,7 @@ export class Ava {
         if (!arrayVideos) throw new Error('Send the arrayVideos on the constructor')
         this.user = user
         this.password = password
+        this.arrayVideos = arrayVideos
     }
     /**
      * 
