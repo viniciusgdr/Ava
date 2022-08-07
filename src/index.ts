@@ -1,5 +1,4 @@
 import puppeteer from 'puppeteer';
-import { avaLogin } from './functions/login';
 import { readAvaVideo } from './functions/readAvaVideo';
 import { makeActivitesByMeLogin } from './functions/realizeAct';
 import { realizeAllActivites } from './functions/realizeActivites';
@@ -30,22 +29,10 @@ export class Ava {
         if (!cobaiaUser) throw new Error('Send the cobaiaUser')
         if (!cobaiaPassword) throw new Error('Send the cobaiaPassword')
 
-        const browser = await puppeteer.launch({
-            headless: options?.headless || false,
-            defaultViewport: {
-                height: 600,
-                width: 800
-            }
-        })
-        let tokenMe = await avaLogin(browser, this.user, this.password)
-        const browser2 = await puppeteer.launch({
-            headless: options?.headless || false,
-            defaultViewport: {
-                height: 600,
-                width: 800
-            }
-        })
-        let token2 = await avaLogin(browser2, cobaiaUser, cobaiaPassword)
+        const browser = await this.generateNewBrowser(options)
+        let tokenMe = await this.avaLogin(browser, this.user, this.password)
+        const browser2 = await this.generateNewBrowser(options)
+        let token2 = await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
         let result = await realizeAllActivites(browser, tokenMe.token, {
             token2: token2.token,
             needListUrl: this.arrayVideos
@@ -70,28 +57,17 @@ export class Ava {
                 width: 800
             }
         })
-        let login = await avaLogin(browser, this.user, this.password)
-        const browser2 = await puppeteer.launch({
-            headless: false,
-            defaultViewport: {
-                height: 600,
-                width: 800
-            }
-        })
-        await avaLogin(browser2, cobaiaUser, cobaiaPassword)
+        let login = await this.avaLogin(browser, this.user, this.password)
+        const browser2 = await this.generateNewBrowser()
+        await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
         await makeActivitesByMeLogin(browser, browser2, this.arrayVideos, login.token)
     }
     public async readAula(options?: {
         headless: boolean,
         chromePath: string
     }) {
-        console.log('| Inicializando navegador - Realizando Login...')
-        const browser = await puppeteer.launch({
-            headless: options?.headless || false,
-            executablePath: options?.chromePath || process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome',
-        })
-        let login = await avaLogin(browser, this.user, this.password)
-        console.log('| Login realizado com sucesso! - Iniciando aula...')
+        const browser = await this.generateNewBrowser(options)
+        let login = await this.avaLogin(browser, this.user, this.password)
         let results: {
             timeVideo: number;
             seconds: number;
@@ -110,4 +86,38 @@ export class Ava {
         await browser.close();
         return results
     }
-}
+    private async avaLogin(browser: puppeteer.Browser, user: string, password: string) {
+        let page = await browser.newPage()
+        await page.goto('https://ava.sae.digital/login')
+        await page.waitForTimeout(1000)
+        await page.type('#usuario', user)
+        await page.waitForTimeout(1000)
+        await page.type('#senha', password)
+        await page.waitForTimeout(1000)
+        await page.click('#btnEntrar')
+        await page.waitForNavigation()
+    
+        let html = await page.content()
+        let token: string = await page.evaluate('getCookieServices.userToken')
+        await page.close()
+        return {
+            page,
+            html,
+            token
+        }
+    }
+    private async generateNewBrowser(options?: {
+        headless?: boolean,
+        chromePath?: string
+    }) {
+        const browser = await puppeteer.launch({
+            headless: options?.headless || false,
+            executablePath: options?.chromePath || process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome',
+            defaultViewport: {
+                height: 600,
+                width: 800
+            }
+        })
+        return browser
+    }
+};
