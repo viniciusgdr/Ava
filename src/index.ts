@@ -24,17 +24,21 @@ export class Ava {
      * @returns
      */
     public async makeActivites(cobaiaUser: string, cobaiaPassword: string, options?: {
-        headless: boolean
+        headless?: boolean,
+        browser?: puppeteer.Browser,
+        browserCobaia?: puppeteer.Browser,
+        useToken?: string,
+        useTokenCobaia?: string
     }) {
         if (!cobaiaUser) throw new Error('Send the cobaiaUser')
         if (!cobaiaPassword) throw new Error('Send the cobaiaPassword')
 
-        const browser = await this.generateNewBrowser(options)
-        let tokenMe = await this.avaLogin(browser, this.user, this.password)
-        const browser2 = await this.generateNewBrowser(options)
-        let token2 = await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
-        let result = await realizeAllActivites(browser, tokenMe.token, {
-            token2: token2.token,
+        const browser = options?.browser || await this.generateNewBrowser(options)
+        let tokenMe = options?.useTokenCobaia || await this.avaLogin(browser, this.user, this.password)
+        const browser2 = options?.browserCobaia || await this.generateNewBrowser(options)
+        let token2 = options?.useTokenCobaia || await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
+        let result = await realizeAllActivites(browser, tokenMe, {
+            token2: token2,
             needListUrl: this.arrayVideos
         })
         await browser.close()
@@ -60,14 +64,16 @@ export class Ava {
         let login = await this.avaLogin(browser, this.user, this.password)
         const browser2 = await this.generateNewBrowser()
         await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
-        await makeActivitesByMeLogin(browser, browser2, this.arrayVideos, login.token)
+        await makeActivitesByMeLogin(browser, browser2, this.arrayVideos, login)
     }
     public async readAula(options?: {
-        headless: boolean,
-        chromePath: string
+        headless?: boolean,
+        chromePath?: string,
+        useToken?: string,
+        browser?: puppeteer.Browser
     }) {
-        const browser = await this.generateNewBrowser(options)
-        let login = await this.avaLogin(browser, this.user, this.password)
+        const browser = options?.browser || await this.generateNewBrowser(options)
+        let login = options?.useToken || await this.avaLogin(browser, this.user, this.password)
         let results: {
             timeVideo: number;
             seconds: number;
@@ -80,7 +86,7 @@ export class Ava {
             };
         }[] = []
         for (let i = 0; i < this.arrayVideos.length; i++) {
-            let result = await readAvaVideo(browser, this.arrayVideos[i], login.token);
+            let result = await readAvaVideo(browser, this.arrayVideos[i], login);
             results.push(result)
         }
         await browser.close();
@@ -100,11 +106,7 @@ export class Ava {
         let html = await page.content()
         let token: string = await page.evaluate('getCookieServices.userToken')
         await page.close()
-        return {
-            page,
-            html,
-            token
-        }
+        return token
     }
     private async generateNewBrowser(options?: {
         headless?: boolean,
