@@ -22,7 +22,7 @@ async function sendPostAnswer(answer: string, cardTypeId: string, learningPathId
         }
     })
 }
-async function getData(url: string, token: string) {
+export async function getData(url: string, token: string) {
     try {
         return await axios.get(url, {
             headers: {
@@ -92,14 +92,15 @@ export async function realizeAllActivites(browser: puppeteer.Browser, token: str
                     let myOriginalIndex = dataMe.data.questions[randola].choices.map((value) => value.originalIndex)
                     let me = await sendPostAnswer(idMinha.originalIndex, trilhaWeb[8], trilhaWeb[10], learningPathItemId, myOriginalIndex, schedule_id, token)
                     results.push(me.data)
-                    if (trilhaWeb[8] == '1') {
-                        let urlVideo = arrayUrlActivites[i].replace('/objetiva/', '/video/').replace('/1/', '/4/')
-                        await readAvaVideo(browser, urlVideo, token)
-                    }
                 }
             })
+            if (Number(trilhaWeb[8]) == 1) {
+                let urlVideo = arrayUrlActivites[i].replace('/objetiva/', '/video/').replace('/1/', '/4/')
+                await readAvaVideo(browser, urlVideo, token)
+            }
             allResults.push(results)
         } catch (err) {
+            console.log(err)
             allResults.push([])
         }
     }

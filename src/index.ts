@@ -1,7 +1,10 @@
 import puppeteer from 'puppeteer';
+import { getAllMateries } from './functions/getAllVideosFromSubject';
 import { readAvaVideo } from './functions/readAvaVideo';
 import { makeActivitesByMeLogin } from './functions/realizeAct';
 import { realizeAllActivites } from './functions/realizeActivites';
+import { IResultsActivites } from './interfaces';
+import { getstr } from './utils/getHtml';
 require('dotenv').config()
 
 export class Ava {
@@ -35,11 +38,15 @@ export class Ava {
         if (!cobaiaPassword) throw new Error('Send the cobaiaPassword')
 
         const browser = options?.browser || await this.generateNewBrowser(options)
-        let tokenMe = options?.useTokenCobaia || await this.avaLogin(browser, this.user, this.password)
+        let tokenMe = options?.useToken ? {
+            token: options.useToken
+        } : await this.avaLogin(browser, this.user, this.password)
         const browser2 = options?.browserCobaia || await this.generateNewBrowser(options)
-        let token2 = options?.useTokenCobaia || await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
-        let result = await realizeAllActivites(browser, tokenMe, {
-            token2: token2,
+        let token2 = options?.useTokenCobaia ? {
+            token: options.useTokenCobaia
+        } : await this.avaLogin(browser, this.user, this.password)
+        let result = await realizeAllActivites(browser, tokenMe.token, {
+            token2: token2.token,
             needListUrl: this.arrayVideos
         })
         await browser.close()
@@ -65,7 +72,7 @@ export class Ava {
         let login = await this.avaLogin(browser, this.user, this.password)
         const browser2 = await this.generateNewBrowser()
         await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
-        await makeActivitesByMeLogin(browser, browser2, this.arrayVideos, login)
+        await makeActivitesByMeLogin(browser, browser2, this.arrayVideos, login.token)
     }
     public async readAula(options?: {
         headless?: boolean,
@@ -74,7 +81,9 @@ export class Ava {
         browser?: puppeteer.Browser
     }) {
         const browser = options?.browser || await this.generateNewBrowser(options)
-        let login = options?.useToken || await this.avaLogin(browser, this.user, this.password)
+        let login = options?.useToken ? {
+            token: options.useToken
+        } : await this.avaLogin(browser, this.user, this.password)
         let results: {
             timeVideo: number;
             seconds: number;
@@ -88,7 +97,7 @@ export class Ava {
         }[] = []
         for (let i = 0; i < this.arrayVideos.length; i++) {
             if (!this.checkUrl(this.arrayVideos[i], 'video')) throw new Error('The url is not a video')
-            let result = await readAvaVideo(browser, this.arrayVideos[i], login);
+            let result = await readAvaVideo(browser, this.arrayVideos[i], login.token);
             results.push(result)
         }
         await browser.close();
@@ -115,6 +124,56 @@ export class Ava {
             } else return false
         }
     }
+    public async realizeAllActivitesFromAVA(cobaiaUser: string, cobaiaPassword: string, options?: {
+        headless?: boolean,
+        chromePath?: string,
+        useToken?: string,
+        useTokenCobaia?: string,
+        browser?: puppeteer.Browser,
+        browserCobaia?: puppeteer.Browser,
+        personId?: string,
+        personIdCobaia?: string
+    }) {
+        if (!cobaiaUser) throw new Error('Send the cobaiaUser')
+        if (!cobaiaPassword) throw new Error('Send the cobaiaPassword')
+
+        const browser = options?.browser || await this.generateNewBrowser(options)
+        const browserCobaia = options?.browserCobaia || await this.generateNewBrowser(options)
+        let login = options?.useToken && options?.personId ? {
+            token: options.useToken,
+            personId: options.personId
+        } : await this.avaLogin(browser, this.user, this.password)
+        let loginCobaia = options?.useToken && options?.personIdCobaia ? {
+            token: options.useTokenCobaia,
+            personId: options.personIdCobaia
+        } : await this.avaLogin(browser, this.user, this.password)
+
+        let result = await getAllMateries(login.token, login.personId)
+        let resultCobaia = await getAllMateries(loginCobaia.token, loginCobaia.personId)
+
+        let resultDivergentVideos = []
+        for (let i = 0; i < result.length; i++) {
+            if (resultCobaia.includes(result[i])) {
+                resultDivergentVideos.push(result[i])
+            }
+        }
+        let allResults: any = []
+        for (let i = 0; i < resultDivergentVideos.length; i++) {
+            if (this.checkUrl(resultDivergentVideos[i], 'video')) {
+                let videoResult = await readAvaVideo(browser, resultDivergentVideos[i], login.token)
+                allResults.push(videoResult)
+            } else {
+                let res = await realizeAllActivites(browser, login.token, {
+                    token2: loginCobaia.token,
+                    needListUrl: resultDivergentVideos[i]
+                })
+                allResults.push(res)
+            }
+        }
+        await browser.close()
+        await browserCobaia.close()
+        return allResults
+    }
     private async avaLogin(browser: puppeteer.Browser, user: string, password: string) {
         let page = await browser.newPage()
         await page.goto('https://ava.sae.digital/login')
@@ -125,11 +184,15 @@ export class Ava {
         await page.waitForTimeout(1000)
         await page.click('#btnEntrar')
         await page.waitForNavigation()
-    
+
         let html = await page.content()
         let token: string = await page.evaluate('getCookieServices.userToken')
+        let personId = getstr(html, 'personId = ', ';', 0)
         await page.close()
-        return token
+        return {
+            token: token,
+            personId: personId
+        }
     }
     private async generateNewBrowser(options?: {
         headless?: boolean,
@@ -145,4 +208,4 @@ export class Ava {
         })
         return browser
     }
-}
+};
