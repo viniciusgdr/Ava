@@ -50,13 +50,17 @@ export async function realizeAllActivites(browser: puppeteer.Browser, token: str
         let questions = data.data.questions as IQuestions[]
         let schedule_id = data?.data?.learning_path?.schedules[0]?.id
         if (schedule_id == undefined) throw new Error('Não foi possível encontrar o schedule_id')
+        let results: {
+            correct_answer: string,
+            answered_all_the_questions: boolean,
+            reached_the_goal: boolean,
+            score: number
+        }[] = []
         questions.forEach(async (value, index) => {
             let learningPathItemId = String(value.learning_path_item_id)
             let originalIndex = value.choices.map((value) => value.originalIndex)
-            console.log('2', trilhaWeb[8], trilhaWeb[10], learningPathItemId, originalIndex, schedule_id, token)
             let random = Math.floor(Math.random() * 2) + 2
             let cobaia = await sendPostAnswer(String(random), trilhaWeb[8], trilhaWeb[10], learningPathItemId, originalIndex, schedule_id, token2)
-            console.log(cobaia.data)
             if ('message' in cobaia.data) {
                 if (data.data.can_see_answer) {
                     let correct = value.choices.find((value) => value.correct_answer == 1)
@@ -83,18 +87,16 @@ export async function realizeAllActivites(browser: puppeteer.Browser, token: str
                 let idCobaia = value.choices.find((value) => value.originalIndex == Number(cobaia.data.correct_answer) - 1).id
 
                 let randola = dataMe.data.questions.findIndex((value) => value.learning_path_item_id == learningPathItemId)
-                console.log(randola)
-
                 let idMinha = dataMe.data.questions[randola].choices.find((value) => value.id == idCobaia)
                 let myOriginalIndex = dataMe.data.questions[randola].choices.map((value) => value.originalIndex)
-                console.log(idCobaia, idMinha, myOriginalIndex)
                 let me = await sendPostAnswer(idMinha.originalIndex, trilhaWeb[8], trilhaWeb[10], learningPathItemId, myOriginalIndex, schedule_id, token)
-                console.log('Resultado', me.data)
+                results.push(me.data)
                 if (trilhaWeb[8] == '1') {
                     let urlVideo = arrayUrlActivites[i].replace('/objetiva/', '/video/').replace('/1/', '/4/')
                     await readAvaVideo(browser, urlVideo, token)
                 }
             }
         })
+        return results
     }
 }

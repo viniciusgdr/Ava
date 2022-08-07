@@ -37,12 +37,13 @@ export class Ava {
             }
         })
         let token2 = await avaLogin(browser2, cobaiaUser, cobaiaPassword)
-        await realizeAllActivites(browser, tokenMe.token, {
+        let result = await realizeAllActivites(browser, tokenMe.token, {
             token2: token2.token,
             needListUrl: this.arrayVideos
         })
         await browser.close()
         await browser2.close()
+        return result
     }
     /**
     * @param {string} cobaiaUser - The user of the cobaia
