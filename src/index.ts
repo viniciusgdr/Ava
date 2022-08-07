@@ -17,12 +17,21 @@ export class Ava {
         this.user = user
         this.password = password
     }
-    public async makeActivites(cobaiaUser: string, cobaiaPassword: string) {
+    /**
+     * 
+     * @param cobaiaUser - The user of the cobaia
+     * @param cobaiaPassword - The password of the cobaia
+     * @param options - Options for the method
+     * @returns
+     */
+    public async makeActivites(cobaiaUser: string, cobaiaPassword: string, options?: {
+        headless: boolean
+    }) {
         if (!cobaiaUser) throw new Error('Send the cobaiaUser')
         if (!cobaiaPassword) throw new Error('Send the cobaiaPassword')
 
         const browser = await puppeteer.launch({
-            headless: false,
+            headless: options?.headless || false,
             defaultViewport: {
                 height: 600,
                 width: 800
@@ -30,7 +39,7 @@ export class Ava {
         })
         let tokenMe = await avaLogin(browser, this.user, this.password)
         const browser2 = await puppeteer.launch({
-            headless: false,
+            headless: options?.headless || false,
             defaultViewport: {
                 height: 600,
                 width: 800
@@ -72,10 +81,14 @@ export class Ava {
         await avaLogin(browser2, cobaiaUser, cobaiaPassword)
         await makeActivitesByMeLogin(browser, browser2, this.arrayVideos, login.token)
     }
-    public async readAula() {
+    public async readAula(options?: {
+        headless: boolean,
+        chromePath: string
+    }) {
         console.log('| Inicializando navegador - Realizando Login...')
         const browser = await puppeteer.launch({
-            executablePath: process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome',
+            headless: options?.headless || false,
+            executablePath: options?.chromePath || process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome',
         })
         let login = await avaLogin(browser, this.user, this.password)
         console.log('| Login realizado com sucesso! - Iniciando aula...')
