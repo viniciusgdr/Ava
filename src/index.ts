@@ -7,6 +7,7 @@ import { IResultsActivites } from './interfaces';
 import { getstr } from './utils/getHtml';
 require('dotenv').config()
 
+export * from './functions';
 export class Ava {
     constructor(
         public user: string,
