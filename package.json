@@ -1,0 +1,26 @@
+{
+  "name": "@viniciusgdr/saedigital",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ava",
+    "sae",
+    "digital",
+    "bot"
+  ],
+  "author": "viniciusgdr",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "dotenv": "^16.0.1",
+    "puppeteer": "^13.7.0",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "@types/request": "^2.48.8"
+  }
+}
