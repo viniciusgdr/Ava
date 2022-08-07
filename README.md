@@ -40,12 +40,12 @@ let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, [...ArrayOfVideos]);
 await ava.makeActivites(COBAIA_LOGIN, COBAIA_PASSWORD);
 ```
 
-### Realizar TODAS as Tarefas pendentes do site. (Trilhas/Reforço e VideoAulas)
+#### Realizar TODAS as Tarefas pendentes do site. (Trilhas/Reforço e VideoAulas)
 
 ```ts
 import { Ava } from "@viniciusgdr/Ava";
 
-let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, [...ArrayOfVideos]);
+let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, []);
 await ava.realizeAllActivitesFromAVA(COBAIA_LOGIN, COBAIA_PASSWORD);
 ```
 ## Funções
