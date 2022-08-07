@@ -87,11 +87,33 @@ export class Ava {
             };
         }[] = []
         for (let i = 0; i < this.arrayVideos.length; i++) {
+            if (!this.checkUrl(this.arrayVideos[i], 'video')) throw new Error('The url is not a video')
             let result = await readAvaVideo(browser, this.arrayVideos[i], login);
             results.push(result)
         }
         await browser.close();
         return results
+    }
+    public checkUrl(url: string, type: 'video' | 'trilha' | 'reforco') {
+        if (type == 'video') {
+            // https://ava.sae.digital/trilha/video/9/matematica/videoaulas-livro-3/4/XXXXX/XXXX/organizacao-leitura-e-interpretacao-aula-01
+            let urlSplited = url.split('/')
+            if (urlSplited[3] == 'trilha' && urlSplited[4] == 'video') {
+                return true
+            } else return false
+        } else if (type == 'trilha') {
+            // https://ava.sae.digital/trilha/objetiva/9/matematica/livro-3/1/XXXXX/XXXX/organizacao-leitura-e-interpretacao
+            let urlSplited = url.split('/')
+            if (urlSplited[3] == 'trilha' && urlSplited[4] == 'objetiva' && urlSplited[8] == '1') {
+                return true
+            } else return false
+        } else if (type == 'reforco') {
+            // https://ava.sae.digital/trilha/objetiva/9/matematica/livro-3/11/XXXXX/XXXX/medidas-de-tendencia-central-e-de-dispersao
+            let urlSplited = url.split('/')
+            if (urlSplited[3] == 'trilha' && urlSplited[4] == 'objetiva' && urlSplited[8] == '11') {
+                return true
+            } else return false
+        }
     }
     private async avaLogin(browser: puppeteer.Browser, user: string, password: string) {
         let page = await browser.newPage()
@@ -123,4 +145,4 @@ export class Ava {
         })
         return browser
     }
-};
+}
