@@ -23,8 +23,6 @@ export async function readAvaVideo(browser: puppeteer.Browser, url: string, auth
     await page.close()
     let seconds = videoTime.split(':')
     let secondsTotal = (parseInt(seconds[0]) * 60) + parseInt(seconds[1])
-    console.log(`| Tempo Video: ${videoTime} - Conversão Segundos: ${secondsTotal}`)
-
     request({
         'url': 'https://apis.sae.digital/ava/answer/video',
         'method': 'POST',
@@ -41,6 +39,16 @@ export async function readAvaVideo(browser: puppeteer.Browser, url: string, auth
         })
     }, (error, res, body) => {
         if (error) throw new Error('Erro ao enviar resposta video: ' + error);
-        console.log('| Resultado: ' + JSON.stringify(JSON.parse(body), null, 2))
     })
+    return {
+        timeVideo: videoTime,
+        seconds: secondsTotal,
+        bodyRequest: {
+            'learning_path_id': learningPathId,
+            'learning_path_item_id': learningPathItemId,
+            'schedule_id': scheduleId,
+            'video_percentage': 100,
+            'video_time': secondsTotal
+        }
+    }
 }

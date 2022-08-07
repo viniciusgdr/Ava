@@ -79,7 +79,22 @@ export class Ava {
         })
         let login = await avaLogin(browser, this.user, this.password)
         console.log('| Login realizado com sucesso! - Iniciando aula...')
-        for (let i = 0; i < this.arrayVideos.length; i++) await readAvaVideo(browser, this.arrayVideos[i], login.token);
+        let results: {
+            timeVideo: number;
+            seconds: number;
+            bodyRequest: {
+                learning_path_id: number;
+                learning_path_item_id: number;
+                schedule_id: number;
+                video_percentage: number;
+                video_time: number;
+            };
+        }[] = []
+        for (let i = 0; i < this.arrayVideos.length; i++) {
+            let result = await readAvaVideo(browser, this.arrayVideos[i], login.token);
+            results.push(result)
+        }
         await browser.close();
+        return results
     }
 }
