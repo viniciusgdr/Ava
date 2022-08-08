@@ -40,23 +40,25 @@ export async function makeActivitesAprovaMais(
             }[] = []
             for (let i = 0; i < res.questions.length; i++) {
                 let respostaCorretaIndex = res.questions[i].choices.findIndex((value) => value.correct_answer == 1)
-                let response = await sendAnswerQuestionAprovaMais(
-                    token,
-                    res.questions[i].card_item_id,
-                    id,
-                    respostaCorretaIndex
-                )
-                if ('error' in response.data) {
-                    results.push({
-                        error: response.data.error,
-                        question: res.questions[i]
-                    })
-                } else {
-                    results.push({
-                        success: true,
-                        question: res.questions[i]
-                    })
-                }
+                setTimeout(async () => {
+                    let response = await sendAnswerQuestionAprovaMais(
+                        token,
+                        res.questions[i].card_item_id,
+                        id,
+                        respostaCorretaIndex
+                    )
+                    if ('error' in response.data) {
+                        results.push({
+                            error: response.data.error,
+                            question: res.questions[i]
+                        })
+                    } else {
+                        results.push({
+                            success: true,
+                            question: res.questions[i]
+                        })
+                    }
+                }, i * 3000)
             }
             allResults.push(results)
         } else {
