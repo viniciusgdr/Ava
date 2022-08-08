@@ -1,195 +1,199 @@
 import puppeteer from 'puppeteer';
-import { makeActivitesAprovaMais } from './functions/aprovaMais';
+import { makeActivitesAprovaMais, AprovaMaisQuestion } from './functions/aprovaMais';
 import { getAllMateries } from './functions/getAllVideosFromSubject';
 import { readAvaVideo } from './functions/readAvaVideo';
 import { makeActivitesByMeLogin } from './functions/realizeAct';
-import { realizeAllActivites } from './functions/realizeActivites';
-import { IResultsActivites } from './interfaces';
+import { getData, realizeActivite } from './functions/realizeActivites';
+import { ActivitesAPIResult, IResultsActivites } from './interfaces';
+import { checkUrl } from './utils/checkUrl';
 import { getstr } from './utils/getHtml';
-require('dotenv').config()
 
+const DEFAULT_CHROME_PATH = process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : process.platform == 'linux' ? '/usr/bin/google-chrome' : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 export * from './functions';
 export class Ava {
     constructor(
-        public user: string,
-        public password: string,
-        public arrayVideos: string[]
+        private user: string,
+        private password: string,
+        private arrayVideos?: string[]
     ) {
         if (!user) throw new Error('Send the user on the constructor')
         if (!password) throw new Error('Send the password on the constructor')
-        if (!arrayVideos) throw new Error('Send the arrayVideos on the constructor')
+        //if (!arrayVideos) throw new Error('Send the arrayVideos on the constructor')
         this.user = user
         this.password = password
         this.arrayVideos = arrayVideos
     }
-    /**
-     * 
-     * @param cobaiaUser - The user of the cobaia
-     * @param cobaiaPassword - The password of the cobaia
-     * @param options - Options for the method
-     * @returns
-     */
-    public async makeActivites(cobaiaUser: string, cobaiaPassword: string, options?: {
-        headless?: boolean,
-        browser?: puppeteer.Browser,
-        browserCobaia?: puppeteer.Browser,
-        useToken?: string,
-        useTokenCobaia?: string
+    public async makeAulasByMeLogin(type: 'video' | 'aprova-mais', options?: {
+        puppeteer?: {
+            chromePath: string,
+            browser: puppeteer.Browser,
+            headless: boolean
+        },
+        loginUser?: {
+            tokenUser: string,
+            personId: string
+        }
     }) {
-        if (!cobaiaUser) throw new Error('Send the cobaiaUser')
-        if (!cobaiaPassword) throw new Error('Send the cobaiaPassword')
+        if (!this.arrayVideos && type == 'aprova-mais') throw new Error('Send the arrayVideos on the constructor')
 
-        const browser = options?.browser || await this.generateNewBrowser(options)
-        let tokenMe = options?.useToken ? {
-            token: options.useToken
-        } : await this.avaLogin(browser, this.user, this.password)
-        const browser2 = options?.browserCobaia || await this.generateNewBrowser(options)
-        let token2 = options?.useTokenCobaia ? {
-            token: options.useTokenCobaia
-        } : await this.avaLogin(browser, this.user, this.password)
-        let result = await realizeAllActivites(browser, tokenMe.token, {
-            token2: token2.token,
-            needListUrl: this.arrayVideos
-        })
-        await browser.close()
-        await browser2.close()
-        return result
-    }
-    public async makeActivitesAprovaMais(options?: {
-        headless?: boolean,
-        chromePath?: string,
-        useToken?: string,
-        browser?: puppeteer.Browser
-    }) {
-        const browser = options?.browser || await this.generateNewBrowser(options)
-        let login = options?.useToken ? {
-            token: options.useToken
-        } : await this.avaLogin(browser, this.user, this.password)
-        let res = await makeActivitesAprovaMais(login.token, this.arrayVideos)
-        await browser.close()
-        return res
-    }
-    /**
-    * @param {string} cobaiaUser - The user of the cobaia
-    * @param {string} cobaiaPassword - The password of the cobaia
-    * @deprecated - This method is deprecated, use makeActivites instead
-    */
-    public async makeActivitesByAnotherLogin(
-        cobaiaUser: string,
-        cobaiaPassword: string,
-    ) {
-        const browser = await puppeteer.launch({
+        const browser = options?.puppeteer.browser || await this.generateNewBrowser({
             headless: false,
-            defaultViewport: {
-                height: 600,
-                width: 800
-            }
+            chromePath: DEFAULT_CHROME_PATH
         })
-        let login = await this.avaLogin(browser, this.user, this.password)
-        const browser2 = await this.generateNewBrowser()
-        await this.avaLogin(browser2, cobaiaUser, cobaiaPassword)
-        await makeActivitesByMeLogin(browser, browser2, this.arrayVideos, login.token)
-    }
-    public async readAula(options?: {
-        headless?: boolean,
-        chromePath?: string,
-        useToken?: string,
-        browser?: puppeteer.Browser
-    }) {
-        const browser = options?.browser || await this.generateNewBrowser(options)
-        let login = options?.useToken ? {
-            token: options.useToken
-        } : await this.avaLogin(browser, this.user, this.password)
-        let results: {
-            timeVideo: number;
-            seconds: number;
-            bodyRequest: {
-                learning_path_id: number;
-                learning_path_item_id: number;
-                schedule_id: number;
-                video_percentage: number;
-                video_time: number;
-            };
-        }[] = []
-        for (let i = 0; i < this.arrayVideos.length; i++) {
-            if (!this.checkUrl(this.arrayVideos[i], 'video')) throw new Error('The url is not a video')
-            let result = await readAvaVideo(browser, this.arrayVideos[i], login.token);
-            results.push(result)
-        }
-        await browser.close();
-        return results
-    }
-    public checkUrl(url: string, type: 'video' | 'trilha' | 'reforco') {
-        if (type == 'video') {
-            // https://ava.sae.digital/trilha/video/9/matematica/videoaulas-livro-3/4/XXXXX/XXXX/organizacao-leitura-e-interpretacao-aula-01
-            let urlSplited = url.split('/')
-            if (urlSplited[3] == 'trilha' && urlSplited[4] == 'video') {
-                return true
-            } else return false
-        } else if (type == 'trilha') {
-            // https://ava.sae.digital/trilha/objetiva/9/matematica/livro-3/1/XXXXX/XXXX/organizacao-leitura-e-interpretacao
-            let urlSplited = url.split('/')
-            if (urlSplited[3] == 'trilha' && urlSplited[4] == 'objetiva' && urlSplited[8] == '1') {
-                return true
-            } else return false
-        } else if (type == 'reforco') {
-            // https://ava.sae.digital/trilha/objetiva/9/matematica/livro-3/11/XXXXX/XXXX/medidas-de-tendencia-central-e-de-dispersao
-            let urlSplited = url.split('/')
-            if (urlSplited[3] == 'trilha' && urlSplited[4] == 'objetiva' && urlSplited[8] == '11') {
-                return true
-            } else return false
-        }
-    }
-    public async realizeAllActivitesFromAVA(cobaiaUser: string, cobaiaPassword: string, options?: {
-        headless?: boolean,
-        chromePath?: string,
-        useToken?: string,
-        useTokenCobaia?: string,
-        browser?: puppeteer.Browser,
-        browserCobaia?: puppeteer.Browser,
-        personId?: string,
-        personIdCobaia?: string
-    }) {
-        if (!cobaiaUser) throw new Error('Send the cobaiaUser')
-        if (!cobaiaPassword) throw new Error('Send the cobaiaPassword')
-
-        const browser = options?.browser || await this.generateNewBrowser(options)
-        const browserCobaia = options?.browserCobaia || await this.generateNewBrowser(options)
-        let login = options?.useToken && options?.personId ? {
-            token: options.useToken,
-            personId: options.personId
-        } : await this.avaLogin(browser, this.user, this.password)
-        let loginCobaia = options?.useToken && options?.personIdCobaia ? {
-            token: options.useTokenCobaia,
-            personId: options.personIdCobaia
+        let login = options?.loginUser ? {
+            token: options.loginUser.tokenUser,
+            personId: options.loginUser.personId
         } : await this.avaLogin(browser, this.user, this.password)
 
-        let result = await getAllMateries(login.token, login.personId)
-        let resultCobaia = await getAllMateries(loginCobaia.token, loginCobaia.personId)
-
-        let resultDivergentVideos = []
-        for (let i = 0; i < result.length; i++) {
-            if (resultCobaia.includes(result[i])) {
-                resultDivergentVideos.push(result[i])
-            }
-        }
-        let allResults: any = []
-        for (let i = 0; i < resultDivergentVideos.length; i++) {
-            if (this.checkUrl(resultDivergentVideos[i], 'video')) {
-                let videoResult = await readAvaVideo(browser, resultDivergentVideos[i], login.token)
-                allResults.push(videoResult)
+        if (type == 'aprova-mais') {
+            if (!options?.puppeteer.browser) await browser.close()
+            let res = await makeActivitesAprovaMais(login.token, this.arrayVideos)
+            return res
+        } else {
+            let results: {
+                timeVideo: number;
+                seconds: number;
+                bodyRequest: {
+                    learning_path_id: number;
+                    learning_path_item_id: number;
+                    schedule_id: number;
+                    video_percentage: number;
+                    video_time: number;
+                };
+            }[] = []
+            if (this.arrayVideos.length > 0) {
+                for (let i = 0; i < this.arrayVideos.length; i++) {
+                    if (!checkUrl(this.arrayVideos[i], 'video')) throw new Error('The url is not a video')
+                    let result = await readAvaVideo(browser, this.arrayVideos[i], login.token);
+                    results.push(result)
+                }
+                await browser.close();
+                return results
             } else {
-                let res = await realizeAllActivites(browser, login.token, {
-                    token2: loginCobaia.token,
-                    needListUrl: resultDivergentVideos[i]
-                })
-                allResults.push(res)
+                let result = await getAllMateries(login.token, login.personId)
+                let results = []
+                for (let i = 0; i < result.length; i++) {
+                    let video: string = result[i]
+                    if (checkUrl(video, 'video')) {
+                        let resultado = await readAvaVideo(browser, video, login.token);
+                        results.push(resultado)
+                    }
+                }
             }
+            return results
         }
-        await browser.close()
-        await browserCobaia.close()
-        return allResults
     }
+    /**
+     * @description Realizar todas as atividades pendentes do usuário ou do array de videos
+     * 
+     * @param user {string} Usuário do ava
+     * @param password {string} Senha do ava
+     * @param options {object} Opções do puppeteer ou do ava
+     */
+    public async makeAulasByAnotherUser(user: string, password: string, options?: {
+        puppeteer?: {
+            chromePath: string,
+            browser: puppeteer.Browser,
+            headless: boolean
+        },
+        loginUser?: {
+            tokenUser: string,
+            personId: string
+        }
+        loginAnotherUser?: {
+            tokenAnotherUser: string,
+            personIdAnotherUser: string,
+        }
+    }): Promise<IResultsActivites[] | {
+        message: any;
+    }[]> {
+        const browser = options?.puppeteer.browser || await this.generateNewBrowser({
+            headless: false,
+        })
+        const browserCobaia = await this.generateNewBrowser(options.puppeteer)
+        const { token, personId } = options?.loginUser ? {
+            token: options.loginUser.tokenUser,
+            personId: options.loginUser.personId
+        } : await this.avaLogin(browser, this.user, this.password)
+
+        const { token: tokenAnotherUser, personId: personIdAnotherUser } = options?.loginAnotherUser ? {
+            token: options.loginAnotherUser.tokenAnotherUser,
+            personId: options.loginAnotherUser.personIdAnotherUser
+        } : await this.avaLogin(browserCobaia, user, password)
+
+        if (this.arrayVideos) {
+            let results = []
+            for (let i = 0; i < this.arrayVideos.length; i++) {
+                const video = this.arrayVideos[i]
+                if (checkUrl(video, 'video')) {
+                    let resultado = await readAvaVideo(browser, video, token);
+                    results.push(resultado)
+                } else if (checkUrl(video, 'aprova-mais')) {
+                    let resultado = await makeActivitesAprovaMais(token, [video]);
+                    results.push(resultado)
+                } else {
+                    let result = await realizeActivite(browser, token, {
+                        token2: tokenAnotherUser,
+                        urlRequest: video
+                    })
+                    results.push(result)
+                }
+            }
+            if (!options?.puppeteer.browser) {
+                await browser.close()
+            }
+            return results
+        } else {
+            let result = await getAllMateries(token, personId)
+            let resultCobaia = await getAllMateries(tokenAnotherUser, personIdAnotherUser)
+
+            let results = []
+            for (let i = 0; i < result.length; i++) {
+                let video: string = result[i]
+                if (resultCobaia.includes(video)) {
+                    if (checkUrl(video, 'video')) {
+                        let resultado = await readAvaVideo(browser, video, token);
+                        results.push(resultado)
+                    } else if (checkUrl(video, 'aprova-mais')) {
+                        let resultado = await makeActivitesAprovaMais(token, [video]);
+                        results.push(resultado)
+                    } else {
+                        await realizeActivite(browser, token, {
+                            token2: tokenAnotherUser,
+                            urlRequest: video
+                        })
+                    }
+                } else {
+                    if (checkUrl(result[i], 'video')) {
+                        let resultado = await readAvaVideo(browser, result[i], token);
+                        results.push(resultado)
+                    } else if (checkUrl(result[i], 'aprova-mais')) {
+                        let resultado = await makeActivitesAprovaMais(token, [result[i]]);
+                        results.push(resultado)
+                    } else {
+                        let data: {
+                            data: ActivitesAPIResult
+                        } = await getData(result[i], tokenAnotherUser)
+                        if (data.data.can_see_answer) {
+                            await realizeActivite(browser, token, {
+                                token2: tokenAnotherUser,
+                                urlRequest: result[i]
+                            })
+                        } else {
+                            results.push({
+                                error: 'Não foi possivel realizar a atividade, pois o aluno não tem permissão para ver a resposta'
+                            })
+                        }
+                    }
+                }
+            }
+            if (!options?.puppeteer.browser) {
+                await browser.close()
+            }
+            return results
+        }
+    }
+
     private async avaLogin(browser: puppeteer.Browser, user: string, password: string) {
         let page = await browser.newPage()
         await page.goto('https://ava.sae.digital/login')

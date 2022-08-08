@@ -22,39 +22,46 @@ TODO
 
 ## Uso/Exemplos
 
-#### Ver todas as aulas
-
+### Realizar Video Aulas
 ```ts
 import { Ava } from "@viniciusgdr/Ava";
 
-let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, [...ArrayOfVideos]);
-await ava.readAula();
-```
-#### Realizar atividades Aprova Mais (Exclusivo)
-        
-```ts
-import { Ava } from "@viniciusgdr/Ava";
+// Coleta todas as atividades pendentes e realiza as atividades
+const ava = new Ava('user', 'pass');
 
-let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, [...arrayOfVideosAprovaMais]);
-await ava.makeActivitesAprovaMais();
+// caso queira realizar apenas as que você queira
+const ava = new Ava('user', 'pass', ['aula1', 'aula2']);
+
+await ava.makeAulasByMeLogin('video')
 ```
 
-#### Usar outro login como cobaia e re-passar para o seu em imediato
-
+### Realizar Atividades Aprova+
 ```ts
 import { Ava } from "@viniciusgdr/Ava";
 
-let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, [...ArrayOfVideos]);
-await ava.makeActivites(COBAIA_LOGIN, COBAIA_PASSWORD);
+// Coleta todas as atividades pendentes e realiza as atividades
+const ava = new Ava('user', 'pass');
+await ava.makeAulasByMeLogin('aprova-mais')
+
+// caso queira realizar apenas as que você queira
+const ava = new Ava('user', 'pass', ['aula1', 'aula2']);
+await ava.makeAulasByMeLogin('aprova-mais')
 ```
 
-#### Realizar TODAS as Tarefas pendentes do site. (Trilhas/Reforço e VideoAulas)
-
+### Realizar Trilhas e Reforço
 ```ts
 import { Ava } from "@viniciusgdr/Ava";
 
-let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, []);
-await ava.realizeAllActivitesFromAVA(COBAIA_LOGIN, COBAIA_PASSWORD);
+// Coleta todas as atividades pendentes e realiza as atividades
+const ava = new Ava('user', 'pass');
+
+// caso queira realizar apenas as que você queira
+const ava = new Ava('user', 'pass', ['aula1', 'aula2']);
+
+await ava.makeAulasByAnotherUser(
+        'usercobaia',
+        'passwordcobaia'        
+)
 ```
 
 ## Funções
@@ -62,48 +69,48 @@ Pegar todas as ativiades pendentes do site
 ```ts
 import { getAllMateries } from "@viniciusgdr/Ava";
 
-await getAllMateries(TOKEN, PERSON_ID);
+let result = await getAllMateries(TOKEN, PERSON_ID);
+// result é um array de urls com as atividades pendentes
+console.log(result);
 ```
 
 ## Opções
 
 Para todos os méteodos, você pode passar um objeto de opções como parâmetro.
 
-### Parâmetros de realizeAllActivitesFromAVA
+### Parâmetros de makeAulasByAnotherUser
 
 ```ts
-await ava.realizeAllActivitesFromAVA(COBAIA_LOGIN, COBAIA_PASSWORD, {
-        headless?: boolean,
-        chromePath?: string,
-        useToken?: string,
-        useTokenCobaia?: string,
-        browser?: puppeteer.Browser,
-        browserCobaia?: puppeteer.Browser,
-        personId?: string,
-        personIdCobaia?: string
+await ava.makeAulasByAnotherUser(COBAIA_LOGIN, COBAIA_PASSWORD, {
+        puppeteer?: {
+            chromePath: string,
+            browser: puppeteer.Browser,
+            headless: boolean
+        },
+        loginUser?: {
+            tokenUser: string,
+            personId: string
+        }
+        loginAnotherUser?: {
+            tokenAnotherUser: string,
+            personIdAnotherUser: string,
+        }
 })
 ```
 
-### Parâmetros de makeActivites
+### Parâmetros de makeAulasByMeLogin
 
 ```ts
-await ava.makeActivites(COBAIA_LOGIN, COBAIA_PASSWORD, {
-        headless?: boolean,
-        browser?: puppeteer.Browser,
-        browserCobaia?: puppeteer.Browser,
-        useToken?: string,
-        useTokenCobaia?: string
-});
-```
-
-### Parâmetros de readAula
-
-```ts
-await ava.readAula({
-        headless?: boolean,
-        chromePath?: string,
-        useToken?: string,
-        browser?: puppeteer.Browser
+await ava.makeAulasByMeLogin('aprova-mais' | 'video', {
+        puppeteer?: {
+            chromePath: string,
+            browser: puppeteer.Browser,
+            headless: boolean
+        },
+        loginUser?: {
+            tokenUser: string,
+            personId: string
+        }
 });
 ```
 ## Licença

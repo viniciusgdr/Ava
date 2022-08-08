@@ -65,7 +65,7 @@ export async function getAllMateries(token: string, personId: string) {
         }
     })
     let act = result.data
-    let videosPending = []
+    let videosPending = [] as string[]
     for (let i = 0; i < act.length; i++) {
         let videos = await getAllVideosFromSubject(act[i].team_id, token, act[i].slug)
         if (videos.length > 0) videosPending.push(...videos)
