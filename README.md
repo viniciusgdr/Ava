@@ -30,6 +30,14 @@ import { Ava } from "@viniciusgdr/Ava";
 let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, [...ArrayOfVideos]);
 await ava.readAula();
 ```
+#### Realizar atividades Aprova Mais (Exclusivo)
+        
+```ts
+import { Ava } from "@viniciusgdr/Ava";
+
+let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, [...arrayOfVideosAprovaMais]);
+await ava.makeActivitesAprovaMais();
+```
 
 #### Usar outro login como cobaia e re-passar para o seu em imediato
 
@@ -48,6 +56,7 @@ import { Ava } from "@viniciusgdr/Ava";
 let ava = new Ava(YOUR_LOGIN, YOUR_PASSWORD, []);
 await ava.realizeAllActivitesFromAVA(COBAIA_LOGIN, COBAIA_PASSWORD);
 ```
+
 ## Funções
 Pegar todas as ativiades pendentes do site
 ```ts

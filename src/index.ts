@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import { makeActivitesAprovaMais } from './functions/aprovaMais';
 import { getAllMateries } from './functions/getAllVideosFromSubject';
 import { readAvaVideo } from './functions/readAvaVideo';
 import { makeActivitesByMeLogin } from './functions/realizeAct';
@@ -53,6 +54,20 @@ export class Ava {
         await browser.close()
         await browser2.close()
         return result
+    }
+    public async makeActivitesAprovaMais(options?: {
+        headless?: boolean,
+        chromePath?: string,
+        useToken?: string,
+        browser?: puppeteer.Browser
+    }) {
+        const browser = options?.browser || await this.generateNewBrowser(options)
+        let login = options?.useToken ? {
+            token: options.useToken
+        } : await this.avaLogin(browser, this.user, this.password)
+        let res = await makeActivitesAprovaMais(login.token, this.arrayVideos)
+        await browser.close()
+        return res
     }
     /**
     * @param {string} cobaiaUser - The user of the cobaia
