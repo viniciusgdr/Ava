@@ -110,7 +110,7 @@ export class Ava {
         const browser = options?.puppeteer.browser || await this.generateNewBrowser({
             headless: false,
         })
-        const browserCobaia = await this.generateNewBrowser(options.puppeteer)
+        const browserCobaia = await this.generateNewBrowser(options?.puppeteer)
         const { token, personId } = options?.loginUser ? {
             token: options.loginUser.tokenUser,
             personId: options.loginUser.personId
@@ -142,6 +142,7 @@ export class Ava {
             if (!options?.puppeteer.browser) {
                 await browser.close()
             }
+            await browserCobaia.close()
             return results
         } else {
             let result = await getAllMateries(token, personId)
