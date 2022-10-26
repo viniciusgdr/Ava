@@ -2,7 +2,6 @@ import puppeteer from 'puppeteer';
 import { makeActivitesAprovaMais, AprovaMaisQuestion } from './functions/aprovaMais';
 import { getAllMateries } from './functions/getAllVideosFromSubject';
 import { readAvaVideo } from './functions/readAvaVideo';
-import { makeActivitesByMeLogin } from './functions/realizeAct';
 import { getData, realizeActivite } from './functions/realizeActivites';
 import { ActivitesAPIResult, IResultsActivites } from './interfaces';
 import { checkUrl } from './utils/checkUrl';
@@ -10,12 +9,52 @@ import { getstr } from './utils/getHtml';
 
 const DEFAULT_CHROME_PATH = process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : process.platform == 'linux' ? '/usr/bin/google-chrome' : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 export * from './functions';
-export class Ava {
+
+class Browser {
+    constructor() {}
+    
+    async avaLogin(browser: puppeteer.Browser, user: string, password: string) {
+        let page = await browser.newPage()
+        await page.goto('https://ava.sae.digital/login')
+        await page.waitForTimeout(1000)
+        await page.type('#usuario', user)
+        await page.waitForTimeout(500)
+        await page.type('#senha', password)
+        await page.waitForTimeout(500)
+        await page.click('#btnEntrar')
+        await page.waitForNavigation()
+
+        let html = await page.content()
+        let token: string = await page.evaluate('getCookieServices.userToken')
+        let personId = getstr(html, 'personId = ', ';', 0)
+        await page.close()
+        return {
+            token: token,
+            personId: personId
+        }
+    }
+    async generateNewBrowser(options?: {
+        headless?: boolean,
+        chromePath?: string
+    }) {
+        const browser = await puppeteer.launch({
+            headless: options?.headless || false,
+            executablePath: options?.chromePath || process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome',
+            defaultViewport: {
+                height: 600,
+                width: 800
+            }
+        })
+        return browser
+    }
+}
+export class Ava extends Browser {
     constructor(
         private user: string,
         private password: string,
         private arrayVideos?: string[]
     ) {
+        super();
         if (!user) throw new Error('Send the user on the constructor')
         if (!password) throw new Error('Send the password on the constructor')
         //if (!arrayVideos) throw new Error('Send the arrayVideos on the constructor')
@@ -147,7 +186,7 @@ export class Ava {
         } else {
             let result = await getAllMateries(token, personId)
             let resultCobaia = await getAllMateries(tokenAnotherUser, personIdAnotherUser)
-
+            console.log(result, resultCobaia)
             let results = []
             for (let i = 0; i < result.length; i++) {
                 let video: string = result[i]
@@ -193,40 +232,5 @@ export class Ava {
             }
             return results
         }
-    }
-
-    private async avaLogin(browser: puppeteer.Browser, user: string, password: string) {
-        let page = await browser.newPage()
-        await page.goto('https://ava.sae.digital/login')
-        await page.waitForTimeout(1000)
-        await page.type('#usuario', user)
-        await page.waitForTimeout(1000)
-        await page.type('#senha', password)
-        await page.waitForTimeout(1000)
-        await page.click('#btnEntrar')
-        await page.waitForNavigation()
-
-        let html = await page.content()
-        let token: string = await page.evaluate('getCookieServices.userToken')
-        let personId = getstr(html, 'personId = ', ';', 0)
-        await page.close()
-        return {
-            token: token,
-            personId: personId
-        }
-    }
-    private async generateNewBrowser(options?: {
-        headless?: boolean,
-        chromePath?: string
-    }) {
-        const browser = await puppeteer.launch({
-            headless: options?.headless || false,
-            executablePath: options?.chromePath || process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/google-chrome',
-            defaultViewport: {
-                height: 600,
-                width: 800
-            }
-        })
-        return browser
     }
 };
