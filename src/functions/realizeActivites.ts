@@ -1,8 +1,7 @@
 import axios from 'axios';
 import puppeteer from 'puppeteer';
-import { readAvaVideo } from './readAvaVideo';
+import { Video } from '../structures/Video';
 import { ActivitesAPIResult, IQuestions, IResultsActivites } from './../interfaces';
-import { Cookie } from '../interfaces/Cookie';
 
 interface IRealizeAllActivites {
     token2: string,
@@ -53,7 +52,10 @@ export async function realizeActivite(browser: puppeteer.Browser, token: string,
         if (data.data.expired) {
             if (trilhaWeb[8] == '1') {
                 let urlVideo = urlRequest.replace('/objetiva/', '/video/').replace('/1/', '/4/')
-                await readAvaVideo(browser, urlVideo, token, cookie)
+                await new Video(browser, {
+                    auth: token,
+                    cookie
+                }).read(urlVideo)
             }
             return [
                 {
@@ -107,7 +109,10 @@ export async function realizeActivite(browser: puppeteer.Browser, token: string,
             }
             if (trilhaWeb[8] == '1') {
                 let urlVideo = urlRequest.replace('/objetiva/', '/video/').replace('/1/', '/4/')
-                await readAvaVideo(browser, urlVideo, token, cookie)
+                await new Video(browser, {
+                    auth: token,
+                    cookie
+                }).read(urlVideo)
             }
             return results
         }

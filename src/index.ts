@@ -1,10 +1,9 @@
 import puppeteer from 'puppeteer';
 import { makeActivitesAprovaMais, AprovaMaisQuestion } from './functions/aprovaMais';
 import { getAllMateries } from './functions/getAllVideosFromSubject';
-import { readAvaVideo } from './functions/readAvaVideo';
 import { getData, realizeActivite } from './functions/realizeActivites';
 import { ActivitesAPIResult, IResultsActivites } from './interfaces';
-import { Cookie } from './interfaces/Cookie';
+import { Video } from './structures/Video';
 import { checkUrl } from './utils/checkUrl';
 import { getstr } from './utils/getHtml';
 
@@ -112,7 +111,10 @@ export class Ava extends Browser {
             if (this.arrayVideos.length > 0) {
                 for (let i = 0; i < this.arrayVideos.length; i++) {
                     if (!checkUrl(this.arrayVideos[i], 'video')) throw new Error('The url is not a video')
-                    let result = await readAvaVideo(browser, this.arrayVideos[i], login.token, login.cookie);
+                    let result = await new Video(browser, {
+                        auth: login.token,
+                        cookie: login.cookie
+                    }).read(this.arrayVideos[i])
                     results.push(result)
                 }
                 await browser.close();
@@ -123,8 +125,11 @@ export class Ava extends Browser {
                 for (let i = 0; i < result.length; i++) {
                     let video: string = result[i]
                     if (checkUrl(video, 'video')) {
-                        let resultado = await readAvaVideo(browser, video, login.token, login.cookie);
-                        results.push(resultado)
+                        let result = await new Video(browser, {
+                            auth: login.token,
+                            cookie: login.cookie
+                        }).read(video)
+                        results.push(result)
                     }
                 }
             }
@@ -175,8 +180,11 @@ export class Ava extends Browser {
             for (let i = 0; i < this.arrayVideos.length; i++) {
                 const video = this.arrayVideos[i]
                 if (checkUrl(video, 'video')) {
-                    let resultado = await readAvaVideo(browser, video, token, cookie);
-                    results.push(resultado)
+                    let result = await new Video(browser, {
+                        auth: token,
+                        cookie
+                    }).read(video)
+                    results.push(result)
                 } else if (checkUrl(video, 'aprova-mais')) {
                     let resultado = await makeActivitesAprovaMais(token, [video]);
                     results.push(resultado)
@@ -203,8 +211,11 @@ export class Ava extends Browser {
                 let video: string = result[i]
                 if (resultCobaia.includes(video)) {
                     if (checkUrl(video, 'video')) {
-                        let resultado = await readAvaVideo(browser, video, token, cookie);
-                        results.push(resultado)
+                        let result = await new Video(browser, {
+                            auth: token,
+                            cookie
+                        }).read(video)
+                        results.push(result)
                     } else if (checkUrl(video, 'aprova-mais')) {
                         let resultado = await makeActivitesAprovaMais(token, [video]);
                         results.push(resultado)
@@ -217,7 +228,10 @@ export class Ava extends Browser {
                     }
                 } else {
                     if (checkUrl(result[i], 'video')) {
-                        let resultado = await readAvaVideo(browser, result[i], token, cookie);
+                        let resultado = await new Video(browser, {
+                            auth: token,
+                            cookie
+                        }).read(result[i])
                         results.push(resultado)
                     } else if (checkUrl(result[i], 'aprova-mais')) {
                         let resultado = await makeActivitesAprovaMais(token, [result[i]]);
