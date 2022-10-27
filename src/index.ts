@@ -4,6 +4,7 @@ import { getAllMateries } from './functions/getAllVideosFromSubject';
 import { readAvaVideo } from './functions/readAvaVideo';
 import { getData, realizeActivite } from './functions/realizeActivites';
 import { ActivitesAPIResult, IResultsActivites } from './interfaces';
+import { Cookie } from './interfaces/Cookie';
 import { checkUrl } from './utils/checkUrl';
 import { getstr } from './utils/getHtml';
 
@@ -11,8 +12,8 @@ const DEFAULT_CHROME_PATH = process.platform === 'win32' ? 'C:/Program Files/Goo
 export * from './functions';
 
 class Browser {
-    constructor() {}
-    
+    constructor() { }
+
     async avaLogin(browser: puppeteer.Browser, user: string, password: string) {
         let page = await browser.newPage()
         await page.goto('https://ava.sae.digital/login')
@@ -27,10 +28,17 @@ class Browser {
         let html = await page.content()
         let token: string = await page.evaluate('getCookieServices.userToken')
         let personId = getstr(html, 'personId = ', ';', 0)
+        let cookies = await page.cookies()
+        let cookie: string = ''
+
+        for (let i = 0; i < cookies.length; i++) {
+            cookie += `${cookies[i].name}=${cookies[i].value}; `
+        }
         await page.close()
         return {
             token: token,
-            personId: personId
+            personId: personId,
+            cookie
         }
     }
     async generateNewBrowser(options?: {
@@ -81,7 +89,8 @@ export class Ava extends Browser {
         })
         let login = options?.loginUser ? {
             token: options.loginUser.tokenUser,
-            personId: options.loginUser.personId
+            personId: options.loginUser.personId,
+            cookie: undefined
         } : await this.avaLogin(browser, this.user, this.password)
 
         if (type == 'aprova-mais') {
@@ -103,7 +112,7 @@ export class Ava extends Browser {
             if (this.arrayVideos.length > 0) {
                 for (let i = 0; i < this.arrayVideos.length; i++) {
                     if (!checkUrl(this.arrayVideos[i], 'video')) throw new Error('The url is not a video')
-                    let result = await readAvaVideo(browser, this.arrayVideos[i], login.token);
+                    let result = await readAvaVideo(browser, this.arrayVideos[i], login.token, login.cookie);
                     results.push(result)
                 }
                 await browser.close();
@@ -114,7 +123,7 @@ export class Ava extends Browser {
                 for (let i = 0; i < result.length; i++) {
                     let video: string = result[i]
                     if (checkUrl(video, 'video')) {
-                        let resultado = await readAvaVideo(browser, video, login.token);
+                        let resultado = await readAvaVideo(browser, video, login.token, login.cookie);
                         results.push(resultado)
                     }
                 }
@@ -150,9 +159,10 @@ export class Ava extends Browser {
             headless: false,
         })
         const browserCobaia = await this.generateNewBrowser(options?.puppeteer)
-        const { token, personId } = options?.loginUser ? {
+        const { token, personId, cookie } = options?.loginUser ? {
             token: options.loginUser.tokenUser,
-            personId: options.loginUser.personId
+            personId: options.loginUser.personId,
+            cookie: undefined
         } : await this.avaLogin(browser, this.user, this.password)
 
         const { token: tokenAnotherUser, personId: personIdAnotherUser } = options?.loginAnotherUser ? {
@@ -165,7 +175,7 @@ export class Ava extends Browser {
             for (let i = 0; i < this.arrayVideos.length; i++) {
                 const video = this.arrayVideos[i]
                 if (checkUrl(video, 'video')) {
-                    let resultado = await readAvaVideo(browser, video, token);
+                    let resultado = await readAvaVideo(browser, video, token, cookie);
                     results.push(resultado)
                 } else if (checkUrl(video, 'aprova-mais')) {
                     let resultado = await makeActivitesAprovaMais(token, [video]);
@@ -173,7 +183,8 @@ export class Ava extends Browser {
                 } else {
                     let result = await realizeActivite(browser, token, {
                         token2: tokenAnotherUser,
-                        urlRequest: video
+                        urlRequest: video,
+                        cookie
                     })
                     results.push(result)
                 }
@@ -192,7 +203,7 @@ export class Ava extends Browser {
                 let video: string = result[i]
                 if (resultCobaia.includes(video)) {
                     if (checkUrl(video, 'video')) {
-                        let resultado = await readAvaVideo(browser, video, token);
+                        let resultado = await readAvaVideo(browser, video, token, cookie);
                         results.push(resultado)
                     } else if (checkUrl(video, 'aprova-mais')) {
                         let resultado = await makeActivitesAprovaMais(token, [video]);
@@ -200,12 +211,13 @@ export class Ava extends Browser {
                     } else {
                         await realizeActivite(browser, token, {
                             token2: tokenAnotherUser,
-                            urlRequest: video
+                            urlRequest: video,
+                            cookie
                         })
                     }
                 } else {
                     if (checkUrl(result[i], 'video')) {
-                        let resultado = await readAvaVideo(browser, result[i], token);
+                        let resultado = await readAvaVideo(browser, result[i], token, cookie);
                         results.push(resultado)
                     } else if (checkUrl(result[i], 'aprova-mais')) {
                         let resultado = await makeActivitesAprovaMais(token, [result[i]]);
@@ -217,7 +229,8 @@ export class Ava extends Browser {
                         if (data.data.can_see_answer) {
                             await realizeActivite(browser, token, {
                                 token2: tokenAnotherUser,
-                                urlRequest: result[i]
+                                urlRequest: result[i],
+                                cookie
                             })
                         } else {
                             results.push({

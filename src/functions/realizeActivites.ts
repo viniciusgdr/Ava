@@ -2,10 +2,12 @@ import axios from 'axios';
 import puppeteer from 'puppeteer';
 import { readAvaVideo } from './readAvaVideo';
 import { ActivitesAPIResult, IQuestions, IResultsActivites } from './../interfaces';
+import { Cookie } from '../interfaces/Cookie';
 
 interface IRealizeAllActivites {
     token2: string,
     urlRequest: string
+    cookie: string
 }
 async function sendPostAnswer(answer: string, cardTypeId: string, learningPathId: string, learningPathItemId: string, random: string[] | number[], schedule_id: string | number, token: string) {
     return await axios.post('https://apis.sae.digital/ava/answer/question', {
@@ -35,7 +37,8 @@ export async function getData(url: string, token: string) {
 }
 export async function realizeActivite(browser: puppeteer.Browser, token: string, {
     token2,
-    urlRequest
+    urlRequest,
+    cookie
 }: IRealizeAllActivites) {
     try {
         let trilhaWeb = urlRequest.split('/')
@@ -50,7 +53,7 @@ export async function realizeActivite(browser: puppeteer.Browser, token: string,
         if (data.data.expired) {
             if (trilhaWeb[8] == '1') {
                 let urlVideo = urlRequest.replace('/objetiva/', '/video/').replace('/1/', '/4/')
-                await readAvaVideo(browser, urlVideo, token)
+                await readAvaVideo(browser, urlVideo, token, cookie)
             }
             return [
                 {
@@ -104,7 +107,7 @@ export async function realizeActivite(browser: puppeteer.Browser, token: string,
             }
             if (trilhaWeb[8] == '1') {
                 let urlVideo = urlRequest.replace('/objetiva/', '/video/').replace('/1/', '/4/')
-                await readAvaVideo(browser, urlVideo, token)
+                await readAvaVideo(browser, urlVideo, token, cookie)
             }
             return results
         }
