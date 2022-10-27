@@ -1,8 +1,8 @@
 import puppeteer from 'puppeteer';
 import { makeActivitesAprovaMais, AprovaMaisQuestion } from './functions/aprovaMais';
 import { getAllMateries } from './functions/getAllVideosFromSubject';
-import { getData, realizeActivite } from './functions/realizeActivites';
 import { ActivitesAPIResult, IResultsActivites } from './interfaces';
+import { Activite, getData } from './structures/Activites';
 import { Video } from './structures/Video';
 import { checkUrl } from './utils/checkUrl';
 import { getstr } from './utils/getHtml';
@@ -189,11 +189,12 @@ export class Ava extends Browser {
                     let resultado = await makeActivitesAprovaMais(token, [video]);
                     results.push(resultado)
                 } else {
-                    let result = await realizeActivite(browser, token, {
-                        token2: tokenAnotherUser,
-                        urlRequest: video,
+                    let result = await new Activite(browser, {
+                        auth: token,
                         cookie
-                    })
+                    }, {
+                        auth: tokenAnotherUser
+                    }).read(video)
                     results.push(result)
                 }
             }
@@ -220,11 +221,12 @@ export class Ava extends Browser {
                         let resultado = await makeActivitesAprovaMais(token, [video]);
                         results.push(resultado)
                     } else {
-                        await realizeActivite(browser, token, {
-                            token2: tokenAnotherUser,
-                            urlRequest: video,
+                        await new Activite(browser, {
+                            auth: token,
                             cookie
-                        })
+                        }, {
+                            auth: tokenAnotherUser
+                        }).read(video)
                     }
                 } else {
                     if (checkUrl(result[i], 'video')) {
@@ -241,11 +243,12 @@ export class Ava extends Browser {
                             data: ActivitesAPIResult
                         } = await getData(result[i], tokenAnotherUser)
                         if (data.data.can_see_answer) {
-                            await realizeActivite(browser, token, {
-                                token2: tokenAnotherUser,
-                                urlRequest: result[i],
+                            await new Activite(browser, {
+                                auth: token,
                                 cookie
-                            })
+                            }, {
+                                auth: tokenAnotherUser
+                            }).read(video)
                         } else {
                             results.push({
                                 error: 'Não foi possivel realizar a atividade, pois o aluno não tem permissão para ver a resposta'

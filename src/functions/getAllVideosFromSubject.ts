@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getData } from "./realizeActivites";
+import { getData } from "../structures/Activites";
 
 export async function getAllVideosFromSubject(teamId: string, token: string, subject: string) {
     let result = await axios.get(`https://apis.sae.digital/ava/learning-path/list?subject=${subject}&teamId=${teamId}&lpType=VD`, {
