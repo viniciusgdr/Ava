@@ -1,6 +1,6 @@
 import { Browser } from "puppeteer";
 import { getstr } from "../utils/getHtml";
-import { url as URL } from './../Defaults/url';
+import { URL_DEFAULT_API } from './../Defaults/url';
 import fetch from 'node-fetch';
 import { htmlAVA } from "./HtmlAVA";
 async function getVideoSecondsVimeo(url: string) {
@@ -64,7 +64,7 @@ export class Video {
             'video_percentage': 100,
             'video_time': videoTimeInSeconds
         }
-        await fetch(URL.videoRequest, {
+        await fetch(URL_DEFAULT_API.videoRequest, {
             method: "POST",
             headers: {
                 'authorization': 'Bearer ' + this.user.auth,
