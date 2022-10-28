@@ -24,9 +24,7 @@ class Browser {
         await page.click('#btnEntrar')
         await page.waitForNavigation()
 
-        let html = await page.content()
         let token: string = await page.evaluate('getCookieServices.userToken')
-        let personId = getstr(html, 'personId = ', ';', 0)
         let cookies = await page.cookies()
         let cookie: string = ''
 
@@ -35,8 +33,7 @@ class Browser {
         }
         await page.close()
         return {
-            token: token,
-            personId: personId,
+            token,
             cookie
         }
     }
@@ -76,8 +73,7 @@ export class Ava extends Browser {
             headless: boolean
         },
         loginUser?: {
-            tokenUser: string,
-            personId: string
+            tokenUser: string
         }
     }) {
         if (!this.arrayVideos && type == 'aprova-mais') throw new Error('Send the arrayVideos on the constructor')
@@ -88,7 +84,6 @@ export class Ava extends Browser {
         })
         let login = options?.loginUser ? {
             token: options.loginUser.tokenUser,
-            personId: options.loginUser.personId,
             cookie: undefined
         } : await this.avaLogin(browser, this.user, this.password)
 
@@ -120,7 +115,7 @@ export class Ava extends Browser {
                 await browser.close();
                 return results
             } else {
-                let result = await getAllMateries(login.token, login.personId)
+                let result = await getAllMateries(login.token)
                 let results = []
                 for (let i = 0; i < result.length; i++) {
                     let video: string = result[i]
@@ -150,12 +145,10 @@ export class Ava extends Browser {
             headless: boolean
         },
         loginUser?: {
-            tokenUser: string,
-            personId: string
+            tokenUser: string
         }
         loginAnotherUser?: {
-            tokenAnotherUser: string,
-            personIdAnotherUser: string,
+            tokenAnotherUser: string
         }
     }): Promise<IResultsActivites[] | {
         message: any;
@@ -164,15 +157,13 @@ export class Ava extends Browser {
             headless: false,
         })
         const browserCobaia = await this.generateNewBrowser(options?.puppeteer)
-        const { token, personId, cookie } = options?.loginUser ? {
+        const { token, cookie } = options?.loginUser ? {
             token: options.loginUser.tokenUser,
-            personId: options.loginUser.personId,
             cookie: undefined
         } : await this.avaLogin(browser, this.user, this.password)
 
-        const { token: tokenAnotherUser, personId: personIdAnotherUser } = options?.loginAnotherUser ? {
-            token: options.loginAnotherUser.tokenAnotherUser,
-            personId: options.loginAnotherUser.personIdAnotherUser
+        const { token: tokenAnotherUser } = options?.loginAnotherUser ? {
+            token: options.loginAnotherUser.tokenAnotherUser
         } : await this.avaLogin(browserCobaia, user, password)
 
         if (this.arrayVideos) {
@@ -204,8 +195,8 @@ export class Ava extends Browser {
             await browserCobaia.close()
             return results
         } else {
-            let result = await getAllMateries(token, personId)
-            let resultCobaia = await getAllMateries(tokenAnotherUser, personIdAnotherUser)
+            let result = await getAllMateries(token)
+            let resultCobaia = await getAllMateries(tokenAnotherUser)
             console.log(result, resultCobaia)
             let results = []
             for (let i = 0; i < result.length; i++) {

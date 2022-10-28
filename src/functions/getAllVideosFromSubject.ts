@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getData } from "../structures/Activites";
+import { Token } from './../structures/Token';
 
 export async function getAllVideosFromSubject(teamId: string, token: string, subject: string) {
     let result = await axios.get(`https://apis.sae.digital/ava/learning-path/list?subject=${subject}&teamId=${teamId}&lpType=VD`, {
@@ -57,18 +58,20 @@ export async function getAllVideosFromSubject(teamId: string, token: string, sub
     }
     return all
 };
-export async function getAllMateries(token: string, personId: string) {
-    let result = await axios.get(`https://apis.sae.digital/ava/learning-path/list-by-student-id?studentId=${personId}`, {
+export async function getAllMateries(token: string) {
+    let tokenAssitance = new Token(token)
+    let result = await axios.get(`https://apis.sae.digital/ava/learning-path/list-by-student-id?studentId=${tokenAssitance.personId}`, {
         headers: {
             'Authorization': `Bearer ${token}`,
             'content-type': 'application/json'
         }
     })
-    let act = result.data
+    let act = result.data.filter((activite) => Number(activite.count_pending) > 0)
     let videosPending = [] as string[]
     for (let i = 0; i < act.length; i++) {
         let videos = await getAllVideosFromSubject(act[i].team_id, token, act[i].slug)
+        console.log(videos)
         if (videos.length > 0) videosPending.push(...videos)
     }
     return videosPending
-}
+};
