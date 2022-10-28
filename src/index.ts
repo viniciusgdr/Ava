@@ -1,11 +1,11 @@
 import puppeteer from 'puppeteer';
-import { makeActivitesAprovaMais, AprovaMaisQuestion } from './functions/aprovaMais';
+import { makeActivitesAprovaMais } from './functions/aprovaMais';
 import { getAllMateries } from './functions/getAllVideosFromSubject';
 import { ActivitesAPIResult, IResultsActivites } from './interfaces';
+import { ResultActiviteMeLogin } from './interfaces/ResultActiviteMeLogin';
 import { Activite, getData } from './structures/Activites';
 import { Video } from './structures/Video';
 import { checkUrl } from './utils/checkUrl';
-import { getstr } from './utils/getHtml';
 
 const DEFAULT_CHROME_PATH = process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : process.platform == 'linux' ? '/usr/bin/google-chrome' : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 export * from './functions';
@@ -61,7 +61,6 @@ export class Ava extends Browser {
         super();
         if (!user) throw new Error('Send the user on the constructor')
         if (!password) throw new Error('Send the password on the constructor')
-        //if (!arrayVideos) throw new Error('Send the arrayVideos on the constructor')
         this.user = user
         this.password = password
         this.arrayVideos = arrayVideos
@@ -92,17 +91,7 @@ export class Ava extends Browser {
             let res = await makeActivitesAprovaMais(login.token, this.arrayVideos)
             return res
         } else {
-            let results: {
-                timeVideo: number;
-                seconds: number;
-                bodyRequest: {
-                    learning_path_id: number;
-                    learning_path_item_id: number;
-                    schedule_id: number;
-                    video_percentage: number;
-                    video_time: number;
-                };
-            }[] = []
+            let results: ResultActiviteMeLogin[] = []
             if (this.arrayVideos.length > 0) {
                 for (let i = 0; i < this.arrayVideos.length; i++) {
                     if (!checkUrl(this.arrayVideos[i], 'video')) throw new Error('The url is not a video')
