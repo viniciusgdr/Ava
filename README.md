@@ -88,12 +88,10 @@ await ava.makeAulasByAnotherUser(COBAIA_LOGIN, COBAIA_PASSWORD, {
             headless: boolean
         },
         loginUser?: {
-            tokenUser: string,
-            personId: string
+            tokenUser: string
         }
         loginAnotherUser?: {
-            tokenAnotherUser: string,
-            personIdAnotherUser: string,
+            tokenAnotherUser: string
         }
 })
 ```
@@ -108,8 +106,7 @@ await ava.makeAulasByMeLogin('aprova-mais' | 'video', {
             headless: boolean
         },
         loginUser?: {
-            tokenUser: string,
-            personId: string
+            tokenUser: string
         }
 });
 ```
